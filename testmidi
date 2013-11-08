@@ -7,6 +7,7 @@
 # DESCRIPTION
 # Plays a range of midi notes specified by the user. Each range played is called a 'phase'
 # After playing a phase, a different midi patch will be activated and the process will repeat.
+# The script ends when all specified phases have completed.
 #
 # AUTHOR
 # Chris Grimmett <chris@grimtech.net>
@@ -56,15 +57,13 @@ for phase in $phases; do
     # switch to the next midi patch
     echo "phase is: $phase"
     patch=$(echo "obase=16; $phase" | bc)
-#    patch=$phase
 
     echo "C0 $patch"
     echo "C0 $patch" | xxd -r -p > $midi_device
 
-#    echo "C0 $patch" | xxd -r -p > /dev/snd/midiC1D0
     echo "switching to patch: $patch"
     sleep .05 # wait for just a titch                                                                            
-    let phase=$phase+1
+    let phase=$phase+1 # go onto the next phase
 
 
 done     # with phase iterations
