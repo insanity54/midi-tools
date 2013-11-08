@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#
+# TITLE
+# Midi test script.
+#
+# DESCRIPTION
+# Plays a range of midi notes specified by the user. Each range played is called a 'phase'
+# After playing a phase, a different midi patch will be activated and the process will repeat.
+#
+# AUTHOR
+# Chris Grimmett <chris@grimtech.net>
+#
+
+
+#
+# CONFIG
+#
+midi_device='/dev/snd/midiC1D0' # midi device. something like '/dev/snd/midiC1D0' ... depends on your midi interface
+phases=30     # number of phases to iterate through. each phase uses a different midi patch (increments by 1 every phase)
+
+start_note=10  # note to start on. default is 0
+end_note=30   # note to end on. Max is 172, default is 30
+
+start_phase=9  # phase to start on. The phase number correlates to the patch number. ex: phase 12 plays patch 12
+end_phase=30   # phase to end on.
+
+
+#
+# RUNNER
+#
+declare -a notes # declare an array which will contain the note numbers played in the phase
+for note in $(seq $start_note $end_note); do
+    notes=("${notes[@]}" "$note")
+done
+
+#echo "here are the notes: ${notes[@]}" # display all the notes we are about to play
+
+# we'll do a number of phases iterating through all 172 midi notes, each phase with a different midi program (patch)
+phases=$(seq $start_phase $end_phase)
+for phase in $phases; do
+
+    for play in ${notes[@]}; do
+
+        # note down
+        echo "90 $play 7f" | xxd -r -p > $midi_device
+        echo "playing: $play"
+        sleep .005 # wait for just a titch
+
+        # note up
+        echo "80 $play 7f" | xxd -r -p > $midi_device
+        sleep .1 # wait for just a titch
+
+    done # with playing notes for this phase
+
+    # switch to the next midi patch
+    echo "phase is: $phase"
+    patch=$(echo "obase=16; $phase" | bc)
+#    patch=$phase
+
+    echo "C0 $patch"
+    echo "C0 $patch" | xxd -r -p > $midi_device
+
+#    echo "C0 $patch" | xxd -r -p > /dev/snd/midiC1D0
+    echo "switching to patch: $patch"
+    sleep .05 # wait for just a titch                                                                            
+    let phase=$phase+1
+
+
+done     # with phase iterations
+
+
+
+
